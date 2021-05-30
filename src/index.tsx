@@ -86,7 +86,7 @@ class StringInput extends React.Component<IStringInputProps, IStringInputState> 
   	if (this.state.radioSelect === "by_center" as radioType) {
 			let spacing = length / (num_strings - 1);
 			for (let i = 0; i < num_strings; i++) {
-				strPos.push((first_string_pos + i * spacing).toString());
+				strPos.push('Position:' + (first_string_pos + i * spacing).toString() + ' --- For string width: ' + strWidths[i]);
 			}
   	} else if (this.state.radioSelect === "by_space" as radioType) {
 			let taken_by_string = 0;
@@ -106,7 +106,7 @@ class StringInput extends React.Component<IStringInputProps, IStringInputState> 
 			let current_pos = first_string_pos;
 
 			for (i = 0; i < num_strings; i++) {
-				strPos.push(current_pos.toString());
+				strPos.push('Position:' + current_pos.toString() + ' --- For string width: ' + strWidths[i]);
 				if (i === num_strings - 1) {
 					break;
 				}
