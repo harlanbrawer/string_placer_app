@@ -36,7 +36,7 @@ interface IStringInputProps {
 	updateOutput: (strPos: string[]) => void;
 }
 
-type radioType = "by_center" | "by_space";
+type radioType = "by_center" | "by_space" | "by_average";
 
 interface IStringInputState {
 	inputStringWidths: string[];
@@ -76,44 +76,78 @@ class StringInput extends React.Component<IStringInputProps, IStringInputState> 
   	this.setState({radioSelect: event.target.value as radioType});
   }
 
-  getStrPositionsFromWidths(strWidths: string[]) {
+  getStrPosByCenter(strWidths: string[]) {
   	const strPos: string[] = [];
   	let first_string_pos = parseFloat(this.state.firstStrPos);
   	let last_string_pos = parseFloat(this.state.lastStrPos);
 		let num_strings = strWidths.length;
 		let length = last_string_pos - first_string_pos;
 
-  	if (this.state.radioSelect === "by_center" as radioType) {
-			let spacing = length / (num_strings - 1);
-			for (let i = 0; i < num_strings; i++) {
-				strPos.push('Position: ' + (first_string_pos + i * spacing).toString() + ' --- For string width: ' + strWidths[i]);
-			}
-  	} else if (this.state.radioSelect === "by_space" as radioType) {
-			let taken_by_string = 0;
-			// add half of the first and last strings
-			taken_by_string += (parseFloat(strWidths[0]) + parseFloat(strWidths[num_strings - 1])) / 2
-			// add the rest of the strings
-			let i = 1;
-			while (i < num_strings - 1) {
-				taken_by_string += parseFloat(strWidths[i]);
-				i += 1;
-	  	}
+		let spacing = length / (num_strings - 1);
+		for (let i = 0; i < num_strings; i++) {
+			strPos.push((first_string_pos + i * spacing).toString());
+		}
 
-			// calculate the spacings
-			let empty_spacing = (length - taken_by_string) / (num_strings - 1);
+		return strPos;
+  }
 
-			// set the array
-			let current_pos = first_string_pos;
+  getStrPosBySpace(strWidths: string[]) {
+  	const strPos: string[] = [];
+  	let first_string_pos = parseFloat(this.state.firstStrPos);
+  	let last_string_pos = parseFloat(this.state.lastStrPos);
+		let num_strings = strWidths.length;
+		let length = last_string_pos - first_string_pos;
 
-			for (i = 0; i < num_strings; i++) {
-				strPos.push('Position: ' + current_pos.toString() + ' --- For string width: ' + strWidths[i]);
-				if (i === num_strings - 1) {
-					break;
-				}
-				current_pos += parseFloat(strWidths[i]) / 2 + empty_spacing + parseFloat(strWidths[i + 1]) / 2;
-			}
+		let taken_by_string = 0;
+		// add half of the first and last strings
+		taken_by_string += (parseFloat(strWidths[0]) + parseFloat(strWidths[num_strings - 1])) / 2
+		// add the rest of the strings
+		let i = 1;
+		while (i < num_strings - 1) {
+			taken_by_string += parseFloat(strWidths[i]);
+			i += 1;
   	}
-  	return strPos;
+
+		// calculate the spacings
+		let empty_spacing = (length - taken_by_string) / (num_strings - 1);
+
+		// set the array
+		let current_pos = first_string_pos;
+
+		for (i = 0; i < num_strings; i++) {
+			strPos.push(current_pos.toString());
+			if (i === num_strings - 1) {
+				break;
+			}
+			current_pos += parseFloat(strWidths[i]) / 2 + empty_spacing + parseFloat(strWidths[i + 1]) / 2;
+		}
+
+		return strPos;
+  }
+
+
+  getStrPositionsFromWidths(strWidths: string[]) {
+  	if (this.state.radioSelect === "by_center" as radioType) {
+  		return this.getStrPosByCenter(strWidths);
+  	} else if (this.state.radioSelect === "by_space" as radioType) {
+  		return this.getStrPosBySpace(strWidths);
+  	} else if (this.state.radioSelect === "by_average" as radioType) {
+  		let byCenter = this.getStrPosByCenter(strWidths);
+  		let bySpace = this.getStrPosBySpace(strWidths);
+  		let avgStrPos = [];
+  		for (let i = 0; i < strWidths.length; i++) {
+  			avgStrPos.push(((parseFloat(byCenter[i]) + parseFloat(bySpace[i])) / 2).toString());
+  		}
+  		return avgStrPos;
+  	} else {
+  		return [];
+  	}
+  }
+
+  formatOutPut(strPosList: string[], strWidthList: string[]) {
+  	for(let i = 0; i < strPosList.length; i++) {
+  		strPosList[i] = "Position: " + strPosList[i] + " --- For width: " + strWidthList[i];
+  	}
   }
 
   handleSubmit(event: React.SyntheticEvent) {
@@ -121,6 +155,7 @@ class StringInput extends React.Component<IStringInputProps, IStringInputState> 
   	this.state.inputStringWidths.forEach((width) => {if (width === "") {return;}})
 
   	const strPosList: string[] = this.getStrPositionsFromWidths(this.state.inputStringWidths);
+  	this.formatOutPut(strPosList, this.state.inputStringWidths);
 
   	this.props.updateOutput(strPosList);
   }
@@ -148,6 +183,8 @@ class StringInput extends React.Component<IStringInputProps, IStringInputState> 
 					<input type="radio" name="space_type" value="by_center" onChange={this.handleSpacingChange} checked={this.state.radioSelect === "by_center" as radioType} /></label>
 					<label>By spacing
 					<input type="radio" name="space_type" value="by_space" onChange={this.handleSpacingChange} checked={this.state.radioSelect === "by_space" as radioType} /></label>
+					<label>By average of center and spacing
+					<input type="radio" name="space_type" value="by_average" onChange={this.handleSpacingChange} checked={this.state.radioSelect === "by_average" as radioType} /></label>
 					<br />
 					<input type="button" value="Calculate" onClick={this.handleSubmit}/>
 				</fieldset>
